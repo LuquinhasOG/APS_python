@@ -31,23 +31,28 @@ id_ano = {
 id_mes = ["cphBody_lkMes1", "cphBody_lkMes2", "cphBody_lkMes3", "cphBody_lkMes4", "cphBody_lkMes5", "cphBody_lkMes6", "cphBody_lkMes7", "cphBody_lkMes8", "cphBody_lkMes9", "cphBody_lkMes10", "cphBody_lkMes11", "cphBody_lkMes12", ]
 
 def iniciar_navegador():
+    print("Abrindo o navegador")
     configuracoes_nav = Options()
     configuracoes_nav.add_argument("--headless=new")
     configuracoes_nav.add_experimental_option("detach", True)
     configuracoes_nav.add_experimental_option("prefs", {"download.default_directory": getcwd() + "\\tabelas\\xls"})
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=configuracoes_nav)
+    print("Acessando portal de transparência")
     driver.get("https://www.ssp.sp.gov.br/transparenciassp/Consulta2022.aspx")
     driver.find_element(By.ID, "cphBody_btnFurtoVeiculo").click()
     return driver
 
 def clicar_ano(ano, driver):
+    print(f"Acessando dados do ano {ano}")
     driver.find_element(By.ID, id_ano[str(ano)]).click()
 
 def clicar_mes(mes, driver):
+    print(f"Acessando dados do mês {mes}")
     driver.find_element(By.ID, id_mes[int(mes)-1]).click()
 
-def download(driver):
+def baixar(driver):
+    print("Baixando a Tabela\n")
     driver.find_element(By.ID, "cphBody_ExportarBOLink").click()
 
 if __name__ == "__main__":
@@ -62,7 +67,8 @@ if __name__ == "__main__":
         clicar_ano(i, navegador)
         for j in meses_selecionados:
             clicar_mes(j, navegador)
-            download(navegador)
+            baixar(navegador)
             sleep(3)
 
     navegador.close()
+    print("Fim da execução!")
