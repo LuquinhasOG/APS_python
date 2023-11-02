@@ -3,7 +3,7 @@ from selenium.webdriver.chrome.webdriver import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-from os import getcwd, mkdir
+from os import getcwd, mkdir, listdir, remove
 from os.path import exists
 from time import sleep
 
@@ -37,6 +37,12 @@ def criar_pastas():
         mkdir(diretorio_atual+"/tabelas")
         mkdir(diretorio_atual+"/tabelas/xls")
         mkdir(diretorio_atual+"/tabelas/csv")
+
+def deletar_tabelas():
+    for dir in listdir(diretorio_atual + r"/tabelas/xls"):
+        remove(diretorio_atual + r"/tabelas/xls/" + dir)
+    for dir in listdir(diretorio_atual + r"/tabelas/csv"):
+        remove(diretorio_atual + r"/tabelas/csv/" + dir)
 
 def iniciar_navegador():
     print("Abrindo o navegador")
@@ -79,29 +85,26 @@ def etapa_baixar_tabelas(anos, meses):
     navegador.close()
     print("Navegador fechado\n")
 
-def converter_xls_para_csv(ano, mes):
-    print(f"Convertendo DadosBO_{ano}_{mes}(FURTO DE VEÍCULOS).xls para .csv")
-    arquivo = open(diretorio_atual + f"/tabelas/xls/DadosBO_{ano}_{mes}(FURTO DE VEÍCULOS).xls", "r", errors="ignore")
-    convertido = open(diretorio_atual + f"/tabelas/csv/furto_de_veiculos_{ano}_{mes}.csv", "w", encoding='utf_8')
-    while True:
-        linha_lida = arquivo.readline().replace("\x00", "").replace("ÿþ", "").replace("\t", ",")
-        if not linha_lida:
-            break
+def etapa_converter_tabelas():
+    for dir in listdir(diretorio_atual + r"/tabelas/xls"):
+        print(f"Convertendo {dir} ...")
+        arquivo = open(diretorio_atual + r"/tabelas/xls/" + dir, "r", errors="ignore")
+        convertido = open(diretorio_atual + r"/tabelas/csv/" + dir.replace(".xls", ".csv"), "w", encoding='utf_8')
+        while True:
+            linha_lida = arquivo.readline().replace("\x00", "").replace("ÿþ", "").replace("\t", ",")
+            if not linha_lida:
+                break
 
-        convertido.write(linha_lida)
+            convertido.write(linha_lida)
 
-    arquivo.close()
-    convertido.close()
-    print("Tabela convertida com sucesso!\n")
-    sleep(2)
-
-def etapa_converter_tabelas(anos, meses):
-    for ano in anos:
-        for mes in meses:
-            converter_xls_para_csv(ano, mes)
+        arquivo.close()
+        convertido.close()
+        print("Tabela convertida com sucesso!\n")
+        sleep(2)
 
 if __name__ == "__main__":
     criar_pastas()
+    deletar_tabelas()
 
     print("Digite os anos das tabelas que quer baixar:",end=' ')
     anos_selecionados = [i for i in input().split()]
@@ -109,6 +112,6 @@ if __name__ == "__main__":
     meses_selecionados = [i for i in input().split()]
 
     etapa_baixar_tabelas(anos_selecionados, meses_selecionados)
-    etapa_converter_tabelas(anos_selecionados, meses_selecionados)
+    etapa_converter_tabelas()
 
     print("Fim da execução!")
