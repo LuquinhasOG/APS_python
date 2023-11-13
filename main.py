@@ -6,6 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from os import getcwd, mkdir, listdir, remove
 from os.path import exists
 from time import sleep
+import pandas
 
 id_ano = {
     "2003": "cphBody_lkAno3",
@@ -33,16 +34,19 @@ id_mes = ["cphBody_lkMes1", "cphBody_lkMes2", "cphBody_lkMes3", "cphBody_lkMes4"
 diretorio_atual = getcwd()
 
 def criar_pastas():
-    if(not exists(diretorio_atual+"/tabelas/xls") or not exists(diretorio_atual+"/tabelas/csv")):
+    if(not exists(diretorio_atual+"/tabelas/xls") or not exists(diretorio_atual+"/tabelas/csv") or not exists(diretorio_atual+"/tabelas/final")):
         mkdir(diretorio_atual+"/tabelas")
         mkdir(diretorio_atual+"/tabelas/xls")
         mkdir(diretorio_atual+"/tabelas/csv")
+        mkdir(diretorio_atual+"/tabelas/final")
 
 def deletar_tabelas():
     for dir in listdir(diretorio_atual + r"/tabelas/xls"):
         remove(diretorio_atual + r"/tabelas/xls/" + dir)
     for dir in listdir(diretorio_atual + r"/tabelas/csv"):
         remove(diretorio_atual + r"/tabelas/csv/" + dir)
+    for dir in listdir(diretorio_atual + r"/tabelas/final"):
+        remove(diretorio_atual + r"/tabelas/final/" + dir)
 
 def iniciar_navegador():
     print("Abrindo o navegador")
@@ -50,7 +54,6 @@ def iniciar_navegador():
     configuracoes_nav.add_argument("--headless=new")
     configuracoes_nav.add_experimental_option("detach", True)
     configuracoes_nav.add_experimental_option("prefs", {"download.default_directory": diretorio_atual + "\\tabelas\\xls"})
-
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=configuracoes_nav)
     print("Acessando portal de transparência")
     driver.get("https://www.ssp.sp.gov.br/transparenciassp/Consulta2022.aspx")
@@ -75,13 +78,12 @@ def baixar(driver):
 
 def etapa_baixar_tabelas(anos, meses):
     navegador = iniciar_navegador()
-
     for ano in anos:
         clicar_ano(ano, navegador)
         for mes in meses:
             clicar_mes(mes, navegador)
             baixar(navegador)
-
+    sleep(2)
     navegador.close()
     print("Navegador fechado\n")
 
@@ -102,16 +104,31 @@ def etapa_converter_tabelas():
         print("Tabela convertida com sucesso!\n")
         sleep(2)
 
-if __name__ == "__main__":
+def etapa_juntar_tabelas(anos: list):
+    print("Agrupando os dados nas tabelas por ano")
+    for ano in anos:
+        tabelas = []
+        for d in listdir(diretorio_atual + r"/tabelas/csv"):
+            if str(ano) in d:
+                tabelas.append(pandas.read_csv(diretorio_atual + r"/tabelas/csv/" + d, on_bad_lines="skip"))
+        tabela_concatenada = pandas.concat(tabelas)
+        tabela_concatenada.to_csv(diretorio_atual + f"/tabelas/final/DadosBO_{ano}.csv")
+    print(f"Fim agrupamento, as tabelas finais podem ser encontradas em {diretorio_atual + "\\tabelas\\final"}\n")
+
+def iniciar(anos, meses):
     criar_pastas()
     deletar_tabelas()
+    etapa_baixar_tabelas(anos, meses)
+    etapa_converter_tabelas()
+    etapa_juntar_tabelas(anos)
 
+
+if __name__ == "__main__":
     print("Digite os anos das tabelas que quer baixar:",end=' ')
     anos_selecionados = [i for i in input().split()]
     print("Digite os meses das tabelas que quer baixar:",end=' ')
     meses_selecionados = [i for i in input().split()]
 
-    etapa_baixar_tabelas(anos_selecionados, meses_selecionados)
-    etapa_converter_tabelas()
+    iniciar(anos_selecionados, meses_selecionados)
 
     print("Fim da execução!")
