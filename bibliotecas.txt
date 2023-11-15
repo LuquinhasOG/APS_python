@@ -1,7 +1,0 @@
-bibliotecas usadas:
-selenium
-webdriver-manager
-
-comandos de instalação:
-pip install selenium
-pip install webdriver-manager
